@@ -18,7 +18,7 @@ on:
       DEFCONFIG:
         description: 'Название defconfig'
         required: true
-        default: 'panther_defconfig'
+        default: 'gki_defconfig+cloudripper_gki.fragment'
 
 jobs:
   build:
@@ -118,7 +118,20 @@ jobs:
           export SUBARCH=arm64
           
           echo "::group::Kernel configuration"
-          make ${{ github.event.inputs.DEFCONFIG }}
+          # Проверяем, если в DEFCONFIG есть символ +, то это комбинированная конфигурация
+          if [[ "${{ github.event.inputs.DEFCONFIG }}" == *"+"* ]]; then
+            # Разделяем строку по символу +
+            BASE_CONFIG=$(echo "${{ github.event.inputs.DEFCONFIG }}" | cut -d'+' -f1)
+            FRAGMENT=$(echo "${{ github.event.inputs.DEFCONFIG }}" | cut -d'+' -f2)
+            
+            echo "Используется базовая конфигурация $BASE_CONFIG с фрагментом $FRAGMENT"
+            make $BASE_CONFIG
+            scripts/kconfig/merge_config.sh .config arch/arm64/configs/$FRAGMENT
+          else
+            # Обычный defconfig
+            echo "Используется конфигурация ${{ github.event.inputs.DEFCONFIG }}"
+            make ${{ github.event.inputs.DEFCONFIG }}
+          fi
           echo "::endgroup::"
           
           echo "::group::Kernel compilation"
@@ -183,8 +196,8 @@ jobs:
           zip -r9 ../SukiSU-Kernel-${{ github.event.inputs.DEVICE }}-${{ env.BUILD_DATE }}.zip *
           echo "::endgroup::"
 
-      - name: Upload AnyKernel3
-        uses: actions/upload-artifact@v4
+      - name: Upload kernel zip
+        uses: actions/upload-artifact@v3
         with:
-          name: AnyKernel3_SukiSUUltra_${{ env.KSUVER }}_${{ github.event.inputs.MANIFEST }}_${{ env.DATE }}
-          path: ./AnyKernel3/*
+          name: SukiSU-Kernel-${{ github.event.inputs.DEVICE }}-${{ env.BUILD_DATE }}
+          path: SukiSU-Kernel-${{ github.event.inputs.DEVICE }}-${{ env.BUILD_DATE }}.zip
