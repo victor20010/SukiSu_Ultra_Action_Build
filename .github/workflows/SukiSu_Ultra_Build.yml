@@ -196,8 +196,12 @@ jobs:
           zip -r9 ../SukiSU-Kernel-${{ github.event.inputs.DEVICE }}-${{ env.BUILD_DATE }}.zip *
           echo "::endgroup::"
 
+      - name: Show ZIP info
+        run: ls -lh SukiSU-Kernel-${{ github.event.inputs.DEVICE }}-${{ env.BUILD_DATE }}.zip
+
       - name: Upload kernel zip
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: SukiSU-Kernel-${{ github.event.inputs.DEVICE }}-${{ env.BUILD_DATE }}
           path: SukiSU-Kernel-${{ github.event.inputs.DEVICE }}-${{ env.BUILD_DATE }}.zip
+          compression-level: 0
